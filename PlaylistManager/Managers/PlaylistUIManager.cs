@@ -2,35 +2,39 @@
 using System.Collections.Generic;
 using Zenject;
 using PlaylistManager.Interfaces;
-using PlaylistManager.HarmonyPatches;
+using PlaylistManager.UI;
 
 namespace PlaylistManager.Managers
 {
     class PlaylistUIManager : IInitializable, IDisposable
     {
         AnnotatedBeatmapLevelCollectionsViewController annotatedBeatmapLevelCollectionsViewController;
-        List<ILevelCollectionUpdater> levelCollectionUpdaters;
+        PlaylistViewController playlistViewController;
+        ILevelCollectionUpdater levelCollectionUpdater;
 
         LevelCollectionViewController levelCollectionViewController;
         List<IPreviewBeatmapLevelUpdater> previewBeatmapLevelUpdaters;
 
-        PlaylistUIManager(AnnotatedBeatmapLevelCollectionsViewController annotatedBeatmapLevelCollectionsViewController, List<ILevelCollectionUpdater> levelCollectionUpdaters, LevelCollectionViewController levelCollectionViewController, List<IPreviewBeatmapLevelUpdater> previewBeatmapLevelUpdaters)
+        PlaylistUIManager(AnnotatedBeatmapLevelCollectionsViewController annotatedBeatmapLevelCollectionsViewController, PlaylistViewController playlistViewController, ILevelCollectionUpdater levelCollectionUpdater, LevelCollectionViewController levelCollectionViewController, List<IPreviewBeatmapLevelUpdater> previewBeatmapLevelUpdaters)
         {
             this.annotatedBeatmapLevelCollectionsViewController = annotatedBeatmapLevelCollectionsViewController;
-            this.levelCollectionUpdaters = levelCollectionUpdaters;
+            this.playlistViewController = playlistViewController;
+            this.levelCollectionUpdater = levelCollectionUpdater;
             this.levelCollectionViewController = levelCollectionViewController;
             this.previewBeatmapLevelUpdaters = previewBeatmapLevelUpdaters;
         }
 
         public void Dispose()
         {
-            annotatedBeatmapLevelCollectionsViewController.didSelectAnnotatedBeatmapLevelCollectionEvent -= AnnotatedBeatmapLevelCollectionsViewController_didSelectAnnotatedBeatmapLevelCollectionEvent;
+            annotatedBeatmapLevelCollectionsViewController.didSelectAnnotatedBeatmapLevelCollectionEvent -= DidSelectAnnotatedBeatmapLevelCollectionEvent;
+            playlistViewController.didSelectAnnotatedBeatmapLevelCollectionEvent -= DidSelectAnnotatedBeatmapLevelCollectionEvent;
             levelCollectionViewController.didSelectLevelEvent -= LevelCollectionViewController_didSelectLevelEvent;
         }
 
         public void Initialize()
         {
-            annotatedBeatmapLevelCollectionsViewController.didSelectAnnotatedBeatmapLevelCollectionEvent += AnnotatedBeatmapLevelCollectionsViewController_didSelectAnnotatedBeatmapLevelCollectionEvent;
+            annotatedBeatmapLevelCollectionsViewController.didSelectAnnotatedBeatmapLevelCollectionEvent += DidSelectAnnotatedBeatmapLevelCollectionEvent;
+            playlistViewController.didSelectAnnotatedBeatmapLevelCollectionEvent += DidSelectAnnotatedBeatmapLevelCollectionEvent;
             levelCollectionViewController.didSelectLevelEvent += LevelCollectionViewController_didSelectLevelEvent;
         }
 
@@ -42,12 +46,9 @@ namespace PlaylistManager.Managers
             }
         }
 
-        private void AnnotatedBeatmapLevelCollectionsViewController_didSelectAnnotatedBeatmapLevelCollectionEvent(IAnnotatedBeatmapLevelCollection annotatedBeatmapLevelCollection)
+        private void DidSelectAnnotatedBeatmapLevelCollectionEvent(IAnnotatedBeatmapLevelCollection annotatedBeatmapLevelCollection)
         {
-            foreach (ILevelCollectionUpdater levelCollectionUpdater in levelCollectionUpdaters)
-            {
-                levelCollectionUpdater.LevelCollectionUpdated(annotatedBeatmapLevelCollection);
-            }
+            levelCollectionUpdater.LevelCollectionUpdated(annotatedBeatmapLevelCollection);
         }
     }
 }
