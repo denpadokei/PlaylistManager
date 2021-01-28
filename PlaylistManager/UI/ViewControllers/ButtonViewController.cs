@@ -3,7 +3,6 @@ using BeatSaberMarkupLanguage.Attributes;
 using PlaylistManager.Interfaces;
 using System.Reflection;
 using Zenject;
-using UnityEngine;
 using BeatSaberMarkupLanguage.Components;
 using BeatSaberPlaylistsLib.Types;
 
@@ -16,7 +15,7 @@ namespace PlaylistManager.UI
         private RemoveFromPlaylistController removeFromPlaylistController;
 
         [UIComponent("button")]
-        private Transform buttonTransform;
+        private ButtonIconImage buttonIconImage;
 
         internal enum ButtonState
         {
@@ -35,19 +34,22 @@ namespace PlaylistManager.UI
             }
             set
             {
-                _buttonState = value;
-                buttonTransform.gameObject.SetActive(true);
-                switch (_buttonState)
+                if(_buttonState != value) // Only make changes if state changes
                 {
-                    case ButtonState.AddButton:
-                        buttonTransform.GetComponent<ButtonIconImage>().SetIcon("PlaylistManager.Icons.AddToPlaylist.png");
-                        break;
-                    case ButtonState.RemoveButton:
-                        buttonTransform.GetComponent<ButtonIconImage>().SetIcon("PlaylistManager.Icons.RemoveFromPlaylist.png");
-                        break;
-                    default:
-                        buttonTransform.gameObject.SetActive(false);
-                        break;
+                    _buttonState = value;
+                    buttonIconImage.gameObject.SetActive(true);
+                    switch (_buttonState)
+                    {
+                        case ButtonState.AddButton:
+                            buttonIconImage.SetIcon("PlaylistManager.Icons.AddToPlaylist.png");
+                            break;
+                        case ButtonState.RemoveButton:
+                            buttonIconImage.SetIcon("PlaylistManager.Icons.RemoveFromPlaylist.png");
+                            break;
+                        default:
+                            buttonIconImage.gameObject.SetActive(false);
+                            break;
+                    }
                 }
             }
         }
@@ -62,7 +64,8 @@ namespace PlaylistManager.UI
         public void Initialize()
         {
             BSMLParser.instance.Parse(BeatSaberMarkupLanguage.Utilities.GetResourceContent(Assembly.GetExecutingAssembly(), "PlaylistManager.UI.Views.ButtonView.bsml"), standardLevelDetailViewController.transform.Find("LevelDetail").gameObject, this);
-            buttonTransform.localScale *= 0.7f;
+            buttonIconImage.transform.localScale *= 0.7f;
+            _buttonState = ButtonState.Inactive;
         }
 
         [UIAction("button-click")]

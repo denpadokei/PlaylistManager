@@ -6,29 +6,29 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+/*
+ * Original Author: KyleMC1413
+ * Adapted from BeatSaverDownloader
+ */
+
 namespace PlaylistManager.Utilities
 {
-    class DownloaderUtils
+    internal class DownloaderUtils
     {
         private BeatSaver beatSaverInstance;
         public static DownloaderUtils instance;
-        private bool extractingZip;
 
         public static void Init()
         {
             instance = new DownloaderUtils();
-            HttpOptions options = new HttpOptions
-            {
-                ApplicationName = typeof(DownloaderUtils).Assembly.GetName().Name,
-                Version = typeof(DownloaderUtils).Assembly.GetName().Version,
-            };
+            HttpOptions options = new HttpOptions(name: typeof(DownloaderUtils).Assembly.GetName().Name, version: typeof(DownloaderUtils).Assembly.GetName().Version);
             instance.beatSaverInstance = new BeatSaver(options);
-            instance.extractingZip = false;
         }
 
         public async Task BeatmapDownloadByKey(string key, CancellationToken token, IProgress<double> progress = null, bool direct = false)
         {
-            var song = await beatSaverInstance.Key(key, token, progress);
+            var options = new StandardRequestOptions { Token = token, Progress = progress };
+            var song = await beatSaverInstance.Key(key, options);
             try
             {
                 string customSongsPath = CustomLevelPathHelper.customLevelsDirectoryPath;
@@ -36,7 +36,7 @@ namespace PlaylistManager.Utilities
                 {
                     Directory.CreateDirectory(customSongsPath);
                 }
-                var zip = await song.DownloadZip(direct, token, progress).ConfigureAwait(false);
+                var zip = await song.ZipBytes(direct, options).ConfigureAwait(false);
                 await ExtractZipAsync(song, zip, customSongsPath).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -50,7 +50,8 @@ namespace PlaylistManager.Utilities
 
         public async Task BeatmapDownloadByHash(string hash, CancellationToken token, IProgress<double> progress = null, bool direct = false)
         {
-            var song = await beatSaverInstance.Hash(hash, token, progress);
+            var options = new StandardRequestOptions { Token = token, Progress = progress };
+            var song = await beatSaverInstance.Hash(hash, options);
             try
             {
                 string customSongsPath = CustomLevelPathHelper.customLevelsDirectoryPath;
@@ -58,7 +59,7 @@ namespace PlaylistManager.Utilities
                 {
                     Directory.CreateDirectory(customSongsPath);
                 }
-                var zip = await song.DownloadZip(direct, token, progress).ConfigureAwait(false);
+                var zip = await song.ZipBytes(direct, options).ConfigureAwait(false);
                 await ExtractZipAsync(song, zip, customSongsPath).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -75,7 +76,6 @@ namespace PlaylistManager.Utilities
             Stream zipStream = new MemoryStream(zip);
             try
             {
-                extractingZip = true;
                 ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read);
                 string basePath = songInfo.Key + " (" + songInfo.Metadata.SongName + " - " + songInfo.Metadata.LevelAuthorName + ")";
                 basePath = string.Join("", basePath.Split((Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).ToArray())));
@@ -102,7 +102,6 @@ namespace PlaylistManager.Utilities
             catch (Exception e)
             {
                 Plugin.Log.Critical($"Unable to extract ZIP! Exception: {e}");
-                extractingZip = false;
                 return;
             }
             zipStream.Close();

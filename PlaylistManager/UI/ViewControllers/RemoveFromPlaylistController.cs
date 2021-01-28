@@ -31,6 +31,11 @@ namespace PlaylistManager.UI
             parsed = false;
         }
 
+        internal void Parse()
+        {
+            BSMLParser.instance.Parse(BeatSaberMarkupLanguage.Utilities.GetResourceContent(Assembly.GetExecutingAssembly(), "PlaylistManager.UI.Views.RemoveFromPlaylist.bsml"), standardLevelDetailViewController.transform.Find("LevelDetail").gameObject, this);
+        }
+
         internal void DisplayWarning()
         {
             modal.Show(true);
@@ -41,23 +46,18 @@ namespace PlaylistManager.UI
         internal void RemoveSong()
         {   
             BeatSaberPlaylistsLib.Types.IPlaylist selectedPlaylist = PlaylistLibUtils.playlistManager.GetAllPlaylists()[annotatedBeatmapLevelCollectionsViewController.selectedItemIndex - 2];
-            selectedPlaylist.Remove((IPlaylistSong)selectedPlaylistSong);
+            selectedPlaylist.Remove(selectedPlaylistSong);
             PlaylistLibUtils.playlistManager.StorePlaylist(selectedPlaylist);
             annotatedBeatmapLevelCollectionsViewController.SetData(HarmonyPatches.AnnotatedBeatmapLevelCollectionsViewController_SetData.otherCustomBeatmapLevelCollections, annotatedBeatmapLevelCollectionsViewController.selectedItemIndex, false);
             levelCollectionViewController.SetData(selectedPlaylist.beatmapLevelCollection, selectedPlaylist.collectionName, selectedPlaylist.coverImage, false, null);
         }
 
-        public void PreviewBeatmapLevelUpdated(IPreviewBeatmapLevel beatmapLevel)
+        public void PreviewBeatmapLevelUpdated(IPreviewBeatmapLevel beatmapLevel) // This is needed as it is impossible to get the IPlaylistSong through IDifficultyBeatmapLevel
         {
             if (beatmapLevel is IPlaylistSong)
             {
                 selectedPlaylistSong = (IPlaylistSong)beatmapLevel;
             }
-        }
-
-        internal void Parse()
-        {
-            BSMLParser.instance.Parse(BeatSaberMarkupLanguage.Utilities.GetResourceContent(Assembly.GetExecutingAssembly(), "PlaylistManager.UI.Views.RemoveFromPlaylist.bsml"), standardLevelDetailViewController.transform.Find("LevelDetail").gameObject, this);
         }
     }
 }
